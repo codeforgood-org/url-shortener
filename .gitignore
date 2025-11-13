@@ -178,3 +178,4 @@ tasks.json
 example_tasks.json
 advanced_tasks.json
 *.json.bak
+.todoconfig.json
