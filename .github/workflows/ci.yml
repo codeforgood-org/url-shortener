@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test:
+    name: Test on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov
+
+    - name: Run tests
+      run: |
+        python -m pytest tests/ -v
+
+    - name: Run tests with coverage
+      run: |
+        python -m pytest --cov=todo --cov-report=xml --cov-report=term tests/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black mypy
+
+    - name: Check formatting with Black
+      run: |
+        black --check todo.py tests/ examples/
+
+    - name: Lint with flake8
+      run: |
+        flake8 todo.py tests/ examples/ --max-line-length=100 --extend-ignore=E203
+
+    - name: Type check with mypy
+      run: |
+        mypy todo.py --ignore-missing-imports
+
+  security:
+    name: Security Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+
+    - name: Run Bandit security scan
+      run: |
+        bandit -r todo.py -f json -o bandit-report.json || true
+        bandit -r todo.py
+
+    - name: Check dependencies for vulnerabilities
+      run: |
+        pip freeze | safety check --stdin || true

@@ -172,3 +172,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Todo List Manager specific files
+tasks.json
+example_tasks.json
+advanced_tasks.json
+*.json.bak
+.todoconfig.json
